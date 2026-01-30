@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+
+{% block title %}Thêm nhân viên - FaceID System{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-user-plus me-2"></i>Thêm nhân viên mới</h2>
+
+<div class="row">
+    <!-- Form thông tin -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle me-2"></i>Thông tin nhân viên</h5>
+            </div>
+            <div class="card-body">
+                <form id="addUserForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Mã nhân viên *</label>
+                            <input type="text" class="form-control" id="employee_id" required placeholder="VD: NV001">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Username đăng nhập *</label>
+                            <input type="text" class="form-control" id="username" required placeholder="VD: nguyenvana">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Mật khẩu *</label>
+                        <input type="password" class="form-control" id="password" required minlength="6">
+                        <small class="text-muted">Tối thiểu 6 ký tự</small>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Vai trò</label>
+                            <select class="form-select" id="role" required>
+                                <option value="">-- Chọn vai trò --</option>
+                                <option value="admin">Admin</option>
+                                <option value="employee">Nhân viên</option>
+                            </select>
+                        </div>
+                       
+                    </div>
+
+
+
+                    <div class="mb-3">
+                        <label class="form-label">Họ và tên *</label>
+                        <input type="text" class="form-control" id="full_name" required placeholder="Nguyễn Văn A">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" placeholder="email@company.com">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Lương/giờ</label>
+                        <input type="number" class="form-control" id="salary" placeholder="VND">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Phòng ban</label>
+                            <select class="form-select" id="department">
+                                <option value="">-- Chọn phòng ban --</option>
+                                <option value="Phòng IT">Phòng IT</option>
+                                <option value="Phòng Kế toán">Phòng Kế toán</option>
+                                <option value="Phòng Nhân sự">Phòng Nhân sự</option>
+                                <option value="Phòng Kinh doanh">Phòng Kinh doanh</option>
+                                <option value="Phòng Marketing">Phòng Marketing</option>
+                                <option value="Ban Giám đốc">Ban Giám đốc</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Chức vụ</label>
+                            <input type="text" class="form-control" id="position" placeholder="Nhân viên">
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Đăng ký khuôn mặt -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-camera me-2"></i>Đăng ký khuôn mặt</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <div class="position-relative d-inline-block">
+                        <video id="video" width="320" height="240" autoplay style="border-radius: 10px; transform: scaleX(-1);"></video>
+                        <canvas id="canvas" width="320" height="240" style="display: none;"></canvas>
+                    </div>
+                </div>
+                
+                <div class="text-center mb-3">
+                    <button type="button" class="btn btn-outline-primary me-2" id="startCameraBtn">
+                        <i class="fas fa-video me-1"></i>Bật Camera
+                    </button>
+                    <button type="button" class="btn btn-success" id="captureBtn" disabled>
+                        <i class="fas fa-camera me-1"></i>Chụp ảnh
+                    </button>
+                </div>
+                
+                <div class="text-center mb-3">
+                    <div id="capturedImageContainer" style="display: none;">
+                        <p class="text-success"><i class="fas fa-check-circle me-1"></i>Đã chụp ảnh khuôn mặt</p>
+                        <img id="capturedImage" style="max-width: 200px; border-radius: 10px; border: 3px solid #28a745;">
+                        <br>
+                        <button type="button" class="btn btn-sm btn-outline-danger mt-2" id="retakeBtn">
+                            <i class="fas fa-redo me-1"></i>Chụp lại
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Hướng dẫn:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Đứng thẳng, nhìn vào camera</li>
+                        <li>Đảm bảo ánh sáng đủ tốt</li>
+                        <li>Chỉ có 1 người trong khung hình</li>
+                        <li>Không đeo khẩu trang, kính râm</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Nút submit -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="{{ url_for('admin.manage_users') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Quay lại
+                    </a>
+                    <button type="button" class="btn btn-primary btn-lg" id="submitBtn">
+                        <i class="fas fa-save me-2"></i>Thêm nhân viên
+                    </button>
+                </div>
+                <div id="message" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let videoStream = null;
+let capturedImageData = null;
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+
+document.getElementById('startCameraBtn').addEventListener('click', function() {
+    if (videoStream) {
+        // Tắt camera
+        videoStream.getTracks().forEach(track => track.stop());
+        videoStream = null;
+        this.innerHTML = '<i class="fas fa-video me-1"></i>Bật Camera';
+        this.classList.remove('btn-danger');
+        this.classList.add('btn-outline-primary');
+        document.getElementById('captureBtn').disabled = true;
+    } else {
+        // Bật camera
+        navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } })
+            .then(stream => {
+                video.srcObject = stream;
+                videoStream = stream;
+                this.innerHTML = '<i class="fas fa-video-slash me-1"></i>Tắt Camera';
+                this.classList.remove('btn-outline-primary');
+                this.classList.add('btn-danger');
+                document.getElementById('captureBtn').disabled = false;
+            })
+            .catch(err => {
+                alert('Không thể truy cập camera: ' + err.message);
+            });
+    }
+});
+
+// Chụp ảnh
+document.getElementById('captureBtn').addEventListener('click', function() {
+    ctx.save();
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+    ctx.restore();
+    
+    capturedImageData = canvas.toDataURL('image/jpeg', 0.9);
+    
+    document.getElementById('capturedImage').src = capturedImageData;
+    document.getElementById('capturedImageContainer').style.display = 'block';
+});
+
+// Chụp lại
+document.getElementById('retakeBtn').addEventListener('click', function() {
+    capturedImageData = null;
+    document.getElementById('capturedImageContainer').style.display = 'none';
+});
+
+// Submit form
+document.getElementById('submitBtn').addEventListener('click', function() {
+    const form = document.getElementById('addUserForm');
+    
+    // Validate
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+    
+    const userData = {
+        employee_id: document.getElementById('employee_id').value.trim(),
+        username: document.getElementById('username').value.trim(),
+        password: document.getElementById('password').value,
+        role: document.getElementById('role').value,
+        full_name: document.getElementById('full_name').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        salary: document.getElementById('salary').value.trim(),
+        department: document.getElementById('department').value,
+        position: document.getElementById('position').value.trim(),
+        face_image: capturedImageData
+    };
+    
+    if (!userData.employee_id || !userData.username || !userData.password || !userData.full_name) {
+        alert('Vui lòng điền đầy đủ các trường bắt buộc (*)');
+        return;
+    }
+    
+    this.disabled = true;
+    this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang xử lý...';
+    
+    document.getElementById('message').innerHTML = 
+        '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>Đang thêm nhân viên...</div>';
+    
+    fetch('/admin/add_user', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        this.disabled = false;
+        this.innerHTML = '<i class="fas fa-save me-2"></i>Thêm nhân viên';
+        
+        if(data.success) {
+            let alertClass = 'alert-success';
+            let message = data.message;
+            
+            if (data.face_error) {
+                alertClass = 'alert-warning';
+            }
+            
+            document.getElementById('message').innerHTML = 
+                `<div class="alert ${alertClass}">
+                    <i class="fas fa-check-circle me-2"></i>${message}
+                    <br><a href="{{ url_for('admin.manage_users') }}" class="alert-link">Quay lại danh sách</a>
+                </div>`;
+            
+            // Reset form
+            form.reset();
+            capturedImageData = null;
+            document.getElementById('capturedImageContainer').style.display = 'none';
+        } else {
+            document.getElementById('message').innerHTML = 
+                `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>Lỗi: ${data.error}</div>`;
+        }
+    })
+    .catch(error => {
+        this.disabled = false;
+        this.innerHTML = '<i class="fas fa-save me-2"></i>Thêm nhân viên';
+        console.error('Error:', error);
+        document.getElementById('message').innerHTML = 
+            '<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>Lỗi kết nối server!</div>';
+    });
+});
+
+// Cleanup khi rời trang
+window.addEventListener('beforeunload', function() {
+    if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+    }
+});
+</script>
+{% endblock %}

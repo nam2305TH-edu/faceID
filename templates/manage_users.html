@@ -1,0 +1,403 @@
+{% extends "base.html" %}
+
+{% block title %}Quản lý nhân viên - FaceID System{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-users-cog me-2"></i>Quản lý nhân viên</h2>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5>Danh sách nhân viên ({{ users|length }} người)</h5>
+        <a href="{{ url_for('admin.add_user') }}" class="btn btn-success">
+            <i class="fas fa-user-plus me-2"></i>Thêm nhân viên
+        </a>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Mã NV</th>
+                        <th>Họ tên</th>
+                        <th>Email</th>
+                        <th>Phòng ban</th>
+                        <th>Chức vụ</th>
+                        <th>Face ID</th>
+                        <th>Ngày tạo</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td><strong>{{ user.employee_id }}</strong></td>
+                        <td>{{ user.full_name }}</td>
+                        <td>{{ user.email or '--' }}</td>
+                        <td>{{ user.department or '--' }}</td>
+                        <td>{{ user.position or 'Nhân viên' }}</td>
+                        <td>
+                            {% if user.face_registered %}
+                            <span class="badge bg-success"><i class="fas fa-check me-1"></i>Đã đăng ký</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark"><i class="fas fa-exclamation me-1"></i>Chưa đăng ký</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ user.created_at.strftime('%d/%m/%Y') }}</td>
+                        <td>
+                             <button class="btn btn-info btn-sm rounded-circle" onclick="createUser({{ user.id }}, '{{ user.full_name }}')" title="Xem thông tin">
+                                <i class="fa fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-info" onclick="registerFace('{{ user.employee_id }}', '{{ user.full_name }}')" title="Đăng ký khuôn mặt">
+                                <i class="fas fa-camera"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteUser({{ user.id }}, '{{ user.full_name }}')" title="Xóa">
+                                <i class="fas fa-trash"></i>
+                            </button>
+
+                            <button class="btn btn-info btn-sm rounded-circle" onclick="updateUser({{ user.id }}, '{{ user.full_name }}')" title="Sửa thông tin">
+                               <i class="fas fa-sync"></i>  
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted">Chưa có nhân viên nào</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal đăng ký khuôn mặt -->
+<div class="modal fade" id="faceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-camera me-2"></i>Đăng ký khuôn mặt</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-center mb-3">
+                    <strong id="faceModalName">Nhân viên</strong><br>
+                    <small class="text-muted" id="faceModalId"></small>
+                </p>
+                
+                <div class="text-center mb-3">
+                    <video id="faceVideo" width="320" height="240" autoplay style="border-radius: 10px; transform: scaleX(-1);"></video>
+                    <canvas id="faceCanvas" width="320" height="240" style="display: none;"></canvas>
+                </div>
+                
+                <div class="text-center mb-3" id="facePreviewContainer" style="display: none;">
+                    <img id="facePreview" style="max-width: 200px; border-radius: 10px; border: 3px solid #28a745;">
+                </div>
+                
+                <div id="faceMessage" class="mb-3"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" id="captureAndRegisterBtn">
+                    <i class="fas fa-camera me-2"></i>Chụp & Đăng ký
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal xem thông tin nhân viên -->
+<div class="modal fade" id="viewUserModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title"><i class="fas fa-user-circle me-2"></i>Thông tin nhân viên</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <!-- Avatar & Ảnh khuôn mặt -->
+                    <div class="col-md-4 text-center mb-3">
+                        <div class="user-avatar-large mb-3" id="userAvatar">
+                            <i class="fas fa-user fa-5x text-muted"></i>
+                        </div>
+                        <h4 id="viewUserName" class="mb-1">-</h4>
+                        <span class="badge bg-primary" id="viewUserRole">Nhân viên</span>
+                    </div>
+                    
+                    <!-- Thông tin chi tiết -->
+                    <div class="col-md-8">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td width="40%"><i class="fas fa-id-badge me-2 text-primary"></i><strong>Mã nhân viên:</strong></td>
+                                <td id="viewEmployeeId">-</td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-user me-2 text-primary"></i><strong>Tên đăng nhập:</strong></td>
+                                <td id="viewUsername">-</td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-envelope me-2 text-primary"></i><strong>Email:</strong></td>
+                                <td id="viewEmail">-</td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-building me-2 text-primary"></i><strong>Phòng ban:</strong></td>
+                                <td id="viewDepartment">-</td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-briefcase me-2 text-primary"></i><strong>Chức vụ:</strong></td>
+                                <td id="viewPosition">-</td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-camera me-2 text-primary"></i><strong>Face ID:</strong></td>
+                                <td id="viewFaceStatus">-</td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-calendar-plus me-2 text-primary"></i><strong>Ngày tạo:</strong></td>
+                                <td id="viewCreatedAt">-</td>
+                            </tr>
+                        </table>
+                        
+                        <!-- Thống kê điểm danh -->
+                        <hr>
+                        <h6><i class="fas fa-chart-bar me-2"></i>Thống kê điểm danh tháng này</h6>
+                        <div class="row text-center mt-3" id="attendanceStats">
+                            <div class="col-4">
+                                <div class="p-2 bg-success text-white rounded">
+                                    <h4 id="statOnTime" class="mb-0">0</h4>
+                                    <small>Đúng giờ</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="p-2 bg-warning text-dark rounded">
+                                    <h4 id="statLate" class="mb-0">0</h4>
+                                    <small>Đi trễ</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="p-2 bg-danger text-white rounded">
+                                    <h4 id="statAbsent" class="mb-0">0</h4>
+                                    <small>Vắng mặt</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="p-2 bg-warning text-dark rounded">
+                                    <h4 id="statHoursWorked" class="mb-0">0</h4>
+                                    <small>Số giờ làm</small>
+                                </div>
+                            </div>
+
+                            <div class="col-4">
+                                <div class="p-2 bg-success text-white rounded">
+                                    <h4 id="statSalary" class="mb-0">0</h4>
+                                    <small>Lương tháng này</small>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.user-avatar-large {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    border: 4px solid #e9ecef;
+    overflow: hidden;
+}
+.user-avatar-large img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+</style>
+    </div>
+</div>
+
+<script>
+let faceStream = null;
+let currentEmployeeId = null;
+
+function registerFace(employeeId, fullName) {
+    currentEmployeeId = employeeId;
+    document.getElementById('faceModalName').textContent = fullName;
+    document.getElementById('faceModalId').textContent = 'Mã NV: ' + employeeId;
+    document.getElementById('faceMessage').innerHTML = '';
+    document.getElementById('facePreviewContainer').style.display = 'none';
+    
+    const modal = new bootstrap.Modal(document.getElementById('faceModal'));
+    modal.show();
+    
+    // Bật camera
+    navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } })
+        .then(stream => {
+            document.getElementById('faceVideo').srcObject = stream;
+            faceStream = stream;
+        })
+        .catch(err => {
+            document.getElementById('faceMessage').innerHTML = 
+                `<div class="alert alert-danger">Không thể truy cập camera: ${err.message}</div>`;
+        });
+}
+
+document.getElementById('captureAndRegisterBtn').addEventListener('click', function() {
+    const video = document.getElementById('faceVideo');
+    const canvas = document.getElementById('faceCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Chụp ảnh
+    ctx.save();
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+    ctx.restore();
+    
+    const imageData = canvas.toDataURL('image/jpeg', 0.9);
+    
+    document.getElementById('facePreview').src = imageData;
+    document.getElementById('facePreviewContainer').style.display = 'block';
+    
+    this.disabled = true;
+    this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang xử lý...';
+    
+    document.getElementById('faceMessage').innerHTML = 
+        '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>Đang đăng ký khuôn mặt...</div>';
+    
+    // Gửi lên server
+    fetch(`/admin/register_face/${currentEmployeeId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ image: imageData })
+    })
+    .then(response => response.json())
+    .then(data => {
+        this.disabled = false;
+        this.innerHTML = '<i class="fas fa-camera me-2"></i>Chụp & Đăng ký';
+        
+        if (data.success) {
+            document.getElementById('faceMessage').innerHTML = 
+                `<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i>${data.message}</div>`;
+            
+            // Reload trang sau 2 giây
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            document.getElementById('faceMessage').innerHTML = 
+                `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>${data.error}</div>`;
+        }
+    })
+    .catch(error => {
+        this.disabled = false;
+        this.innerHTML = '<i class="fas fa-camera me-2"></i>Chụp & Đăng ký';
+        document.getElementById('faceMessage').innerHTML = 
+            '<div class="alert alert-danger">Lỗi kết nối server!</div>';
+    });
+});
+
+// Đóng modal thì tắt camera
+document.getElementById('faceModal').addEventListener('hidden.bs.modal', function() {
+    if (faceStream) {
+        faceStream.getTracks().forEach(track => track.stop());
+        faceStream = null;
+    }
+});
+
+function createUser(userId, fullName) {
+    // Hiển thị modal loading
+    const modal = new bootstrap.Modal(document.getElementById('viewUserModal'));
+    modal.show();
+    
+    // Reset thông tin
+    document.getElementById('viewUserName').textContent = 'Đang tải...';
+    document.getElementById('userAvatar').innerHTML = '<i class="fas fa-spinner fa-spin fa-3x text-muted"></i>';
+    
+    // Gọi API lấy thông tin nhân viên
+    fetch(`/admin/user_info/${userId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const user = data.user;
+                const stats = data.stats;
+                
+                // Hiển thị thông tin
+                document.getElementById('viewUserName').textContent = user.full_name;
+                document.getElementById('viewUserRole').textContent = user.role === 'admin' ? 'Quản trị viên' : 'Nhân viên';
+                document.getElementById('viewUserRole').className = user.role === 'admin' ? 'badge bg-danger' : 'badge bg-primary';
+                document.getElementById('viewEmployeeId').textContent = user.employee_id;
+                document.getElementById('viewUsername').textContent = user.username;
+                document.getElementById('viewEmail').textContent = user.email || 'Chưa cập nhật';
+                document.getElementById('viewDepartment').textContent = user.department || 'Chưa cập nhật';
+                document.getElementById('viewPosition').textContent = user.position || 'Nhân viên';
+                document.getElementById('viewCreatedAt').textContent = user.created_at;
+                
+                // Face ID status
+                if (user.face_registered) {
+                    document.getElementById('viewFaceStatus').innerHTML = '<span class="badge bg-success"><i class="fas fa-check me-1"></i>Đã đăng ký</span>';
+                } else {
+                    document.getElementById('viewFaceStatus').innerHTML = '<span class="badge bg-warning text-dark"><i class="fas fa-exclamation me-1"></i>Chưa đăng ký</span>';
+                }
+                
+                // Avatar
+                if (user.face_image) {
+                    document.getElementById('userAvatar').innerHTML = `<img src="${user.face_image}" alt="Avatar">`;
+                } else {
+                    document.getElementById('userAvatar').innerHTML = '<i class="fas fa-user fa-5x text-muted"></i>';
+                }
+                
+                // Thống kê điểm danh
+                document.getElementById('statOnTime').textContent = stats.on_time || 0;
+                document.getElementById('statLate').textContent = stats.late || 0;
+                document.getElementById('statAbsent').textContent = stats.absent || 0; 
+                document.getElementById('statHoursWorked').textContent = stats.total_work_hours || 0;
+                document.getElementById('statSalary').textContent = stats.total_salary ? stats.total_salary.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' }) : '0 ₫';
+
+            } else {
+                alert('Không thể tải thông tin nhân viên: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Lỗi kết nối server!');
+        });
+}
+function updateUser(userId, fullName) {
+    window.location.href = `/admin/update_user/${userId}`;
+}
+
+function deleteUser(userId, fullName) {
+    if (!confirm(`Bạn có chắc muốn xóa nhân viên "${fullName}"?\n\nThao tác này sẽ xóa tất cả dữ liệu điểm danh của nhân viên này.`)) {
+        return;
+    }
+    
+    fetch(`/admin/delete_user/${userId}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Đã xóa nhân viên thành công!');
+            location.reload();
+        } else {
+            alert('Lỗi: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Lỗi kết nối server!');
+    });
+}
+</script>
+{% endblock %}

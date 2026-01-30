@@ -1,0 +1,343 @@
+/**
+ * CSS cho trang điểm danh công khai
+ * Dùng cho: attendance_public.html
+ */
+
+/* ==================== Clock Display ==================== */
+.clock-display {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 25px;
+    border-radius: 15px;
+    margin-bottom: 30px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+}
+
+.clock-display .time {
+    font-size: 3.5rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+
+.clock-display .date {
+    font-size: 1.2rem;
+    opacity: 0.9;
+}
+
+/* ==================== Camera Section ==================== */
+.camera-section {
+    margin-bottom: 30px;
+}
+
+#video-container {
+    position: relative;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    background: #000;
+}
+
+#video {
+    width: 100%;
+    max-height: 400px;
+    object-fit: cover;
+    display: block;
+}
+
+#canvas {
+    display: none;
+}
+
+.camera-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 3px solid rgba(102, 126, 234, 0.5);
+    border-radius: 15px;
+    pointer-events: none;
+}
+
+.camera-overlay::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px;
+    height: 200px;
+    border: 2px dashed rgba(255,255,255,0.5);
+    border-radius: 50%;
+}
+
+/* ==================== Action Buttons ==================== */
+.action-buttons {
+    margin-top: 20px;
+}
+
+.action-buttons .btn {
+    padding: 15px 30px;
+    font-size: 1.1rem;
+    margin: 10px;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+}
+
+.action-buttons .btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+}
+
+.btn-check-in {
+    background: linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%);
+    border: none;
+    color: white;
+}
+
+.btn-check-in:hover {
+    background: linear-gradient(135deg, #45a049 0%, #7cb342 100%);
+    color: white;
+}
+
+.btn-check-out {
+    background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+    border: none;
+    color: white;
+}
+
+.btn-check-out:hover {
+    background: linear-gradient(135deg, #e04b5e 0%, #e080eb 100%);
+    color: white;
+}
+
+/* ==================== Employee Card ==================== */
+.employee-card {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.employee-card:hover {
+    border-color: var(--primary-color, #667eea);
+    transform: translateY(-3px);
+}
+
+.employee-card .avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    margin: 0 auto 20px;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+}
+
+.employee-card .avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.employee-card h4 {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.employee-card p {
+    color: #6c757d;
+    margin-bottom: 5px;
+}
+
+/* ==================== Status Section ==================== */
+.status-section {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+}
+
+.status-section h5 {
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.status-item:last-child {
+    border-bottom: none;
+}
+
+.status-item .label {
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.status-item .value {
+    font-weight: 600;
+    color: #333;
+}
+
+/* ==================== Today Attendance List ==================== */
+.attendance-list {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.attendance-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.attendance-item:hover {
+    background: #e9ecef;
+    transform: translateX(5px);
+}
+
+.attendance-item .avatar-small {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    margin-right: 15px;
+    flex-shrink: 0;
+}
+
+.attendance-item .info {
+    flex: 1;
+}
+
+.attendance-item .name {
+    font-weight: 600;
+    color: #333;
+}
+
+.attendance-item .time {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+/* ==================== Result Display ==================== */
+.result-display {
+    margin-top: 20px;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+    display: none;
+}
+
+.result-display.success {
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(139, 195, 74, 0.1) 100%);
+    border: 2px solid #4CAF50;
+    color: #2e7d32;
+    display: block;
+}
+
+.result-display.error {
+    background: linear-gradient(135deg, rgba(244, 67, 54, 0.1) 0%, rgba(233, 30, 99, 0.1) 100%);
+    border: 2px solid #f44336;
+    color: #c62828;
+    display: block;
+}
+
+.result-display.info {
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(3, 169, 244, 0.1) 100%);
+    border: 2px solid #2196F3;
+    color: #1565c0;
+    display: block;
+}
+
+.result-display h4 {
+    margin-bottom: 10px;
+}
+
+.result-display i {
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+    display: block;
+}
+
+/* ==================== Instructions Panel ==================== */
+.instructions-panel {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-left: 4px solid #667eea;
+}
+
+.instructions-panel h6 {
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.instructions-panel ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.instructions-panel li {
+    color: #555;
+    margin-bottom: 8px;
+}
+
+/* ==================== Responsive ==================== */
+@media (max-width: 768px) {
+    .clock-display .time {
+        font-size: 2.5rem;
+    }
+    
+    .clock-display .date {
+        font-size: 1rem;
+    }
+    
+    .employee-card .avatar {
+        width: 80px;
+        height: 80px;
+        font-size: 2rem;
+    }
+    
+    .action-buttons .btn {
+        padding: 12px 20px;
+        font-size: 1rem;
+        margin: 5px;
+    }
+    
+    #video {
+        max-height: 250px;
+    }
+}

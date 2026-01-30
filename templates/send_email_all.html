@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Gửi Email Cho Nhân Viên{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Gửi email cho tất cả nhân viên</h2>
+    <form method="POST">
+        <div class="mb-3">
+            <label for="subject" class="form-label">Tiêu đề</label>
+            <input type="text" class="form-control" id="subject" name="subject" required>
+        </div>
+        <div class="mb-3">
+            <label for="content" class="form-label">Nội dung</label>
+            <textarea class="form-control" id="content" name="content" rows="6" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Gửi email</button>
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary ms-2">Quay lại</a>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Điểm danh FaceID - Hệ thống tự động nhận diện</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/common.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/attendance.css') }}">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .attendance-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .camera-section {
+            background: #000;
+            position: relative;
+        }
+        .info-section {
+            padding: 30px;
+        }
+        .employee-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 15px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        .employee-card.active {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+        }
+        /* Ẩn video gốc, chỉ dùng để capture */
+        #video {
+            display: none !important;
+        }
+        
+        /* Canvas hiển thị camera */
+        #cameraCanvas {
+            width: 100%;
+            height: auto;
+            display: block;
+            background: #000;
+        }
+        .camera-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .face-frame {
+            position: absolute;
+            top: 35%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 250px;
+            height: 280px;
+            border: 3px solid rgba(255, 255, 255, 0.5);
+            border-radius: 15px;
+        }
+        
+        /* Responsive cho mobile */
+        @media (max-width: 768px) {
+            .face-frame {
+                top: 30%;
+                width: 180px;
+                height: 220px;
+            }
+        }
+        .btn-checkin {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            border: none;
+        }
+        .btn-checkout {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            border: none;
+        }
+        .status-badge {
+            font-size: 1rem;
+            padding: 8px 20px;
+            border-radius: 50px;
+        }
+        .clock-display {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        .date-display {
+            color: #666;
+            font-size: 1.2rem;
+        }
+        #resultMessage {
+            font-size: 1.0rem;
+            font-weight: bold;
+            min-height: 60px;
+        }
+        
+        /* Camera tip for mobile */
+        .camera-tip {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            z-index: 10;
+            text-align: center;
+            animation: pulse 2s infinite;
+        }
+        
+        .camera-tip i {
+            margin-right: 5px;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        
+        .btn-switch-camera {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            font-size: 1.2rem;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-switch-camera:hover {
+            background: #fff;
+            transform: scale(1.1);
+        }
+        
+        @media (min-width: 769px) {
+            .camera-tip, .btn-switch-camera {
+                display: none;
+            }
+        }
+        
+        /* ===== MOBILE FULLSCREEN CAMERA ===== */
+        @media (max-width: 768px) {
+            body {
+                background: #000;
+                padding: 0;
+                margin: 0;
+                overflow: hidden;
+            }
+            
+            .container {
+                padding: 0 !important;
+                max-width: 100% !important;
+            }
+            
+            .attendance-container {
+                border-radius: 0;
+                box-shadow: none;
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+            }
+            
+            .attendance-container > .row {
+                flex: 1;
+                margin: 0;
+            }
+            
+            .camera-section {
+                position: fixed !important;
+                top: 0;
+                left: 0;
+                width: 100vw !important;
+                height: 100vh !important;
+                max-width: 100% !important;
+                z-index: 1;
+                padding: 0 !important;
+            }
+            
+            .camera-section .position-relative {
+                width: 100%;
+                height: 100%;
+            }
+            
+            #video {
+                display: none !important;
+            }
+            
+            #cameraCanvas {
+                width: 100vw !important;
+                height: 100vh !important;
+                object-fit: cover;
+                display: block;
+            }
+            
+            .info-section {
+                display: none;
+            }
+            
+            /* Hide desktop elements on mobile */
+            .col-md-5.info-section,
+            .attendance-container > .row:last-child {
+                display: none !important;
+            }
+            
+            .face-frame {
+                top: 35%;
+                width: 200px;
+                height: 250px;
+                border: 3px dashed rgba(255, 255, 255, 0.6);
+            }
+            
+            .camera-tip {
+                top: 15px;
+                font-size: 0.8rem;
+                padding: 6px 12px;
+            }
+            
+            .btn-switch-camera {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+        
+        /* ===== EMPLOYEE INFO OVERLAY (for mobile) ===== */
+        .employee-overlay {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 350px;
+            background: rgba(0, 0, 0, 0.85);
+            border-radius: 20px;
+            padding: 20px;
+            color: white;
+            z-index: 100;
+            text-align: center;
+            display: none;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+        
+        .employee-overlay.show {
+            display: block;
+        }
+        
+        .employee-overlay.success {
+            border-color: #43e97b;
+            box-shadow: 0 0 30px rgba(67, 233, 123, 0.3);
+        }
+        
+        .employee-overlay.warning {
+            border-color: #fee140;
+            box-shadow: 0 0 30px rgba(254, 225, 64, 0.3);
+        }
+        
+        .employee-overlay .employee-avatar {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            font-size: 2rem;
+        }
+        
+        .employee-overlay .employee-name {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .employee-overlay .employee-id-text {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 10px;
+        }
+        
+        .employee-overlay .status-text {
+            font-size: 1rem;
+            padding: 8px 20px;
+            border-radius: 30px;
+            display: inline-block;
+            font-weight: bold;
+        }
+        
+        .employee-overlay .status-text.checkin {
+            background: linear-gradient(135deg, #43e97b, #38f9d7);
+            color: #000;
+        }
+        
+        .employee-overlay .status-text.checkout {
+            background: linear-gradient(135deg, #fa709a, #fee140);
+            color: #000;
+        }
+        
+        .employee-overlay .status-text.done {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+        
+        .employee-overlay .confidence {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 8px;
+        }
+        
+        .employee-overlay .countdown {
+            font-size: 0.85rem;
+            color: #43e97b;
+            margin-top: 8px;
+        }
+        
+        /* Mobile action buttons */
+        .mobile-actions {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            gap: 15px;
+            z-index: 100;
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-actions {
+                display: flex;
+            }
+        }
+        
+        .mobile-actions button {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: none;
+            font-size: 1.5rem;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .mobile-actions .btn-checkin-mobile {
+            background: linear-gradient(135deg, #43e97b, #38f9d7);
+        }
+        
+        .mobile-actions .btn-checkout-mobile {
+            background: linear-gradient(135deg, #fa709a, #fee140);
+        }
+        
+        .mobile-actions button:active {
+            transform: scale(0.95);
+        }
+        
+        /* Clock overlay for mobile */
+        .mobile-clock {
+            position: absolute;
+            top: 60px;
+            right: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 15px;
+            border-radius: 10px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: bold;
+            z-index: 10;
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-clock {
+                display: block;
+            }
+            
+            .camera-overlay .position-absolute.bottom-0 {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="attendance-container">
+                    <div class="row">
+                        <!-- Camera Section -->
+                        <div class="col-md-7 camera-section">
+                            <div class="position-relative">
+                                <!-- Video ẩn, chỉ dùng để capture stream -->
+                                <video id="video" autoplay playsinline muted style="display:none;"></video>
+                                <!-- Canvas hiển thị camera -->
+                                <canvas id="cameraCanvas"></canvas>
+                                
+                                <!-- Hướng dẫn cho mobile -->
+                                <div class="camera-tip" id="cameraTip">
+                                    <i class="fas fa-camera"></i>
+                                    Đưa mặt vào khung
+                                </div>
+                                
+                                <!-- Nút chuyển camera -->
+                                <button class="btn-switch-camera" id="switchCameraBtn" onclick="switchCamera()" title="Chuyển camera">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                                
+                                <div class="camera-overlay">
+                                    <div class="face-frame"></div>
+                                    <div class="position-absolute bottom-0 start-0 w-100 p-3 text-white">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <i class="fas fa-camera me-2"></i>
+                                                <span id="cameraStatus">Camera đang hoạt động</span>
+                                            </div>
+                                            <div style="width:100px; height:50px;" class="clock-display text-white" id="currentTime">--:--:--</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Mobile Clock -->
+                                <div class="mobile-clock" id="mobileClock">--:--:--</div>
+                                
+                                <!-- Employee Info Overlay (hiển thị khi nhận diện được) -->
+                                <div class="employee-overlay" id="employeeOverlay">
+                                    <div class="employee-avatar">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <div class="employee-name" id="overlayName">---</div>
+                                    <div class="employee-id-text" id="overlayId">Mã NV: ---</div>
+                                    <div class="status-text checkin" id="overlayStatus">CHƯA NHẬN DIỆN</div>
+                                    <div class="confidence" id="overlayConfidence"></div>
+                                    <div class="countdown" id="overlayCountdown"></div>
+                                </div>
+                                
+                                <!-- Mobile Action Buttons -->
+                                <div class="mobile-actions">
+                                    <button class="btn-checkin-mobile" onclick="checkIn()" title="Check-in">
+                                        <i class="fas fa-sign-in-alt"></i>
+                                    </button>
+                                    <button class="btn-checkout-mobile" onclick="checkOut()" title="Check-out">
+                                        <i class="fas fa-sign-out-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Information Section -->
+                        <div class="col-md-5 info-section">
+                            <h2 class="mb-4 text-center">
+                                <i class="fas fa-id-card me-2"></i>ĐIỂM DANH FACEID
+                            </h2>
+                            
+                            <!-- Thông tin nhân viên -->
+                            <div class="employee-card mb-4" id="employeeInfo">
+                                <div class="text-center">
+                                    <div class="mb-3">
+                                        <i class="fas fa-user-circle fa-4x text-primary"></i>
+                                    </div>
+                                    <h3 id="employeeName">Vui lòng đứng trước camera</h3>
+                                    <p class="text-muted" id="employeeId">Hệ thống đang nhận diện...</p>
+                                    <div class="mt-3">
+                                        <span class="badge bg-secondary status-badge" id="attendanceStatus">
+                                            CHƯA NHẬN DIỆN
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Thông báo kết quả -->
+                            <div class="alert alert-info text-center mb-4" id="resultMessage">
+                                Hãy đứng thẳng, nhìn vào camera
+                            </div>
+                            
+                            <!-- Nút hành động -->
+                            <div class="action-buttons text-center mb-4">
+                                <button class="btn btn-checkin btn-lg me-2 mb-2" onclick="checkIn()">
+                                    <i class="fas fa-sign-in-alt me-2"></i>CHECK-IN
+                                </button>
+                                <button class="btn btn-checkout btn-lg mb-2" onclick="checkOut()">
+                                    <i class="fas fa-sign-out-alt me-2"></i>CHECK-OUT
+                                </button>
+                            </div>
+                            
+                            <!-- Auto recognition toggle -->
+                            <div class="form-check form-switch mb-4">
+                                <input class="form-check-input" type="checkbox" id="autoRecognition" checked>
+                                <label class="form-check-label" for="autoRecognition">
+                                    <i class="fas fa-robot me-2"></i>Tự động nhận diện
+                                </label>
+                            </div>
+                            
+                            <!-- Thống kê hôm nay -->
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-chart-bar me-2"></i>THỐNG KÊ HÔM NAY
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row text-center">
+                                        <div class="col-4">
+                                            <h4 id="totalToday">0</h4>
+                                            <small>Tổng</small>
+                                        </div>
+                                        <div class="col-4">
+                                            <h4 id="checkedInToday">0</h4>
+                                            <small>Check-in</small>
+                                        </div>
+                                        <div class="col-4">
+                                            <h4 id="checkedOutToday">0</h4>
+                                            <small>Check-out</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Liên kết admin -->
+                            <div class="text-center">
+                                <a href="{{ url_for('auth.login') }}" class="text-decoration-none">
+                                    <i class="fas fa-lock me-2"></i>Đăng nhập quản trị
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Danh sách điểm danh hôm nay -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card border-0">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-list me-2"></i>ĐIỂM DANH HÔM NAY
+                                        <button class="btn btn-sm btn-outline-primary float-end" onclick="loadTodayAttendance()">
+                                            <i class="fas fa-sync-alt"></i>
+                                        </button>
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive attendance-list">
+                                        <table class="table table-sm" id="todayAttendanceTable">
+                                            <thead>
+                                                <tr>
+                                                    <th>Mã NV</th>
+                                                    <th>Họ tên</th>
+                                                    <th>Check-in</th>
+                                                    <th>Check-out</th>
+                                                    <th>Trạng thái</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <!-- Dữ liệu sẽ được load bằng JS -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Modal -->
+    <div class="modal fade" id="messageModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">Thông báo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="modalBody">
+                    <!-- Nội dung thông báo -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let videoStream = null;
+        let currentEmployee = null;
+        let currentAttendance = null;
+        let autoRecognitionInterval = null;
+        let autoCheckTimer = null;
+        let recognizedEmployeeId = null;
+        let recognitionStartTime = null;
+        const AUTO_CHECK_DELAY = 2000;
+        
+        let currentFacingMode = 'user';
+        let drawFrameId = null;  // Animation frame ID
+        let audioUnlocked = false;  // Trạng thái audio đã được unlock
+        
+        const video = document.getElementById('video');
+        const cameraCanvas = document.getElementById('cameraCanvas');
+        const cameraCtx = cameraCanvas.getContext('2d');
+        
+        // Unlock audio trên mobile khi user tương tác
+        function unlockAudio() {
+            if (audioUnlocked) return;
+            
+            // Tạo và phát âm thanh im lặng để unlock
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                
+                // Tạo buffer im lặng
+                const buffer = audioCtx.createBuffer(1, 1, 22050);
+                const source = audioCtx.createBufferSource();
+                source.buffer = buffer;
+                source.connect(audioCtx.destination);
+                source.start(0);
+                
+                console.log('Audio context unlocked');
+            } catch(e) {
+                console.log('Audio context unlock failed:', e);
+            }
+            
+            // Unlock Speech Synthesis
+            if ('speechSynthesis' in window) {
+                // Phát một utterance rỗng để unlock
+                const silentUtterance = new SpeechSynthesisUtterance('');
+                silentUtterance.volume = 0;
+                window.speechSynthesis.speak(silentUtterance);
+                console.log('Speech synthesis unlocked');
+            }
+            
+            audioUnlocked = true;
+        }
+        
+        // Unlock khi user chạm/click
+        document.addEventListener('click', unlockAudio, { once: true });
+        document.addEventListener('touchstart', unlockAudio, { once: true });
+        
+        // Canvas cho việc capture ảnh gửi server
+        const captureCanvas = document.createElement('canvas');
+        const captureCtx = captureCanvas.getContext('2d');
+        captureCanvas.width = 640;
+        captureCanvas.height = 480;
+        
+        // Alias cho compatibility
+        const canvas = captureCanvas;
+        const ctx = captureCtx;
+
+        // Vẽ frame từ video lên canvas liên tục
+        function drawFrame() {
+            if (video.readyState >= 2) {
+                // Resize canvas theo video
+                if (cameraCanvas.width !== video.videoWidth || cameraCanvas.height !== video.videoHeight) {
+                    cameraCanvas.width = video.videoWidth || 640;
+                    cameraCanvas.height = video.videoHeight || 480;
+                }
+                
+                // Lật hình cho camera trước (mirror effect)
+                const isMobile = window.innerWidth <= 768;
+                if (currentFacingMode === 'user') {
+                    cameraCtx.save();
+                    cameraCtx.scale(-1, 1);
+                    cameraCtx.drawImage(video, -cameraCanvas.width, 0, cameraCanvas.width, cameraCanvas.height);
+                    cameraCtx.restore();
+                } else {
+                    cameraCtx.drawImage(video, 0, 0, cameraCanvas.width, cameraCanvas.height);
+                }
+            }
+            drawFrameId = requestAnimationFrame(drawFrame);
+        }
+
+        // Khởi động camera
+        async function startCamera() {
+            if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                document.getElementById('cameraStatus').textContent = 'Cần HTTPS!';
+                document.getElementById('cameraStatus').className = 'text-danger';
+                return;
+            }
+
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                console.error('Trình duyệt không hỗ trợ camera');
+                return;
+            }
+
+            try {
+                // Dừng camera cũ
+                if (videoStream) {
+                    videoStream.getTracks().forEach(track => track.stop());
+                }
+                if (drawFrameId) {
+                    cancelAnimationFrame(drawFrameId);
+                }
+                
+                const constraints = {
+                    video: {
+                        width: { ideal: 640, max: 1280 },
+                        height: { ideal: 480, max: 720 },
+                        facingMode: currentFacingMode
+                    },
+                    audio: false
+                };
+
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                
+                video.srcObject = stream;
+                videoStream = stream;
+                
+                // Đợi video sẵn sàng rồi bắt đầu vẽ
+                video.onloadedmetadata = () => {
+                    video.play().then(() => {
+                        console.log('Camera started, drawing frames...');
+                        document.getElementById('cameraStatus').textContent = 'Đang quét...';
+                        document.getElementById('cameraStatus').className = 'text-success';
+                        
+                        // Bắt đầu vẽ frame lên canvas
+                        drawFrame();
+                        
+                        // Bắt đầu nhận diện
+                        startAutoRecognition();
+                        
+                        // Ẩn tip
+                        const tip = document.getElementById('cameraTip');
+                        if (tip) setTimeout(() => tip.style.display = 'none', 3000);
+                    }).catch(e => {
+                        console.log('Play error:', e);
+                        // Vẫn thử vẽ frame
+                        drawFrame();
+                        startAutoRecognition();
+                    });
+                };
+                
+                // Cũng thử play ngay
+                video.play().catch(() => {});
+                
+            } catch (error) {
+                console.error('Camera error:', error);
+                document.getElementById('cameraStatus').textContent = 'Lỗi: ' + error.message;
+                document.getElementById('cameraStatus').className = 'text-danger';
+            }
+        }
+        
+        // Chuyển đổi camera trước/sau
+        async function switchCamera() {
+            currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+            
+            // Cập nhật tip
+            const tip = document.getElementById('cameraTip');
+            if (tip) {
+                if (currentFacingMode === 'environment') {
+                    tip.innerHTML = '<i class="fas fa-mobile-alt"></i> Camera sau';
+                } else {
+                    tip.innerHTML = '<i class="fas fa-mobile-alt"></i> Camera trước';
+                }
+                tip.style.display = 'block';
+                setTimeout(() => tip.style.display = 'none', 2000);
+            }
+            
+            await startCamera();
+        }
+
+        // Tự động nhận diện
+        let isRecognizing = false;  // Tránh gọi trùng
+        
+        function startAutoRecognition() {
+            console.log('Starting auto recognition...');
+            if (autoRecognitionInterval) {
+                clearInterval(autoRecognitionInterval);
+            }
+            
+            // Nhận diện ngay lập tức lần đầu
+            setTimeout(() => recognizeFace(), 1000);
+            
+            autoRecognitionInterval = setInterval(() => {
+                if (!isRecognizing) {
+                    recognizeFace();
+                }
+            }, 4000); // Nhận diện mỗi 4 giây (giảm tải server)
+        }
+
+        // Dừng tự động nhận diện
+        function stopAutoRecognition() {
+            if (autoRecognitionInterval) {
+                clearInterval(autoRecognitionInterval);
+                autoRecognitionInterval = null;
+            }
+        }
+
+        // Nhận diện khuôn mặt
+        async function recognizeFace() {
+            if (!videoStream) {
+                console.log('No video stream');
+                return;
+            }
+            
+            // Kiểm tra video có sẵn sàng không
+            if (video.readyState < 2 || video.videoWidth === 0) {
+                console.log('Video not ready:', video.readyState, video.videoWidth);
+                return;
+            }
+            
+            // Tránh gọi trùng
+            if (isRecognizing) {
+                console.log('Already recognizing, skip');
+                return;
+            }
+            isRecognizing = true;
+            
+            try {
+                // Resize ảnh nhỏ hơn để giảm tải server (max 320px)
+                const maxSize = 320;
+                let targetWidth = video.videoWidth;
+                let targetHeight = video.videoHeight;
+                
+                if (targetWidth > maxSize || targetHeight > maxSize) {
+                    const ratio = Math.min(maxSize / targetWidth, maxSize / targetHeight);
+                    targetWidth = Math.floor(targetWidth * ratio);
+                    targetHeight = Math.floor(targetHeight * ratio);
+                }
+                
+                captureCanvas.width = targetWidth;
+                captureCanvas.height = targetHeight;
+                
+                // Chụp ảnh từ video
+                captureCtx.drawImage(video, 0, 0, targetWidth, targetHeight);
+                const imageData = captureCanvas.toDataURL('image/jpeg', 0.7);
+                
+                // Cập nhật status
+                document.getElementById('cameraStatus').textContent = 'Đang quét...';
+                
+                // Gửi lên server nhận diện
+                const response = await fetch('/attendance/recognize', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ image: imageData })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.employee) {
+                    document.getElementById('cameraStatus').textContent = 'Đã nhận diện!';
+                    currentEmployee = data.employee;
+                    currentAttendance = data.attendance;
+                    updateEmployeeInfo(data.employee, data.attendance, data.confidence);
+                    
+                    // Xử lý auto check-in/check-out
+                    handleAutoCheck(data.employee, data.attendance);
+                } else {
+                    document.getElementById('cameraStatus').textContent = data.error || 'Đang quét...';
+                    resetEmployeeInfo();
+                    resetAutoCheckTimer();
+                }
+            } catch (error) {
+                console.error('Recognition error:', error);
+                document.getElementById('cameraStatus').textContent = 'Đang quét...';
+                resetAutoCheckTimer();
+            } finally {
+                isRecognizing = false;
+            }
+        }
+        
+        // Xử lý tự động check-in/check-out sau 5 giây
+        function handleAutoCheck(employee, attendance) {
+            // Kiểm tra xem có cùng nhân viên đang được nhận diện không
+            if (recognizedEmployeeId !== employee.id) {
+                // Nhân viên khác, reset timer
+                resetAutoCheckTimer();
+                recognizedEmployeeId = employee.id;
+                recognitionStartTime = Date.now();
+            }
+            
+            // Nếu đã check-out rồi thì không làm gì
+            if (attendance && attendance.has_checked_out) {
+                resetAutoCheckTimer();
+                document.getElementById('overlayCountdown').textContent = '';
+                return;
+            }
+            
+            // Tính thời gian đã nhận diện liên tục
+            const elapsedTime = Date.now() - recognitionStartTime;
+            const remainingTime = Math.max(0, Math.ceil((AUTO_CHECK_DELAY - elapsedTime) / 1000));
+            
+            // Hiển thị đếm ngược
+            if (remainingTime > 0) {
+                let actionText = '';
+                let countdownText = '';
+                if (!attendance || !attendance.has_checked_in) {
+                    actionText = `Tự động CHECK-IN sau ${remainingTime} giây...`;
+                    countdownText = `⏱️ Tự động CHECK-IN sau ${remainingTime}s`;
+                } else if (!attendance.has_checked_out) {
+                    actionText = `Tự động CHECK-OUT sau ${remainingTime} giây...`;
+                    countdownText = `⏱️ Tự động CHECK-OUT sau ${remainingTime}s`;
+                }
+                
+                if (actionText) {
+                    document.getElementById('resultMessage').innerHTML = 
+                        `<i class="fas fa-clock fa-spin me-2"></i>${actionText}`;
+                    document.getElementById('resultMessage').className = 'alert alert-info text-center';
+                    
+                    // Cập nhật countdown trên overlay
+                    document.getElementById('overlayCountdown').textContent = countdownText;
+                }
+            }
+            
+            // Nếu đã đủ 5 giây và chưa có timer đang chạy
+            if (elapsedTime >= AUTO_CHECK_DELAY && !autoCheckTimer) {
+                autoCheckTimer = setTimeout(async () => {
+                    // Thực hiện check-in hoặc check-out
+                    await performAutoCheck();
+                }, 100);
+            }
+        }
+        
+        // Thực hiện auto check
+        async function performAutoCheck() {
+            if (!currentEmployee) return;
+            
+            try {
+                // Chụp ảnh mới để gửi
+                captureCtx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
+                const imageData = captureCanvas.toDataURL('image/jpeg', 0.8);
+                
+                let actionType = '';
+                if (!currentAttendance || !currentAttendance.has_checked_in) {
+                    actionType = 'CHECK-IN';
+                } else if (!currentAttendance.has_checked_out) {
+                    actionType = 'CHECK-OUT';
+                } else {
+                    resetAutoCheckTimer();
+                    return;
+                }
+                
+                document.getElementById('resultMessage').innerHTML = 
+                    `<i class="fas fa-spinner fa-spin me-2"></i>Đang xử lý ${actionType} tự động...`;
+                document.getElementById('resultMessage').className = 'alert alert-warning text-center';
+                
+                // Gửi request check-in/check-out
+                const response = await fetch('/attendance/check', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ image: imageData })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (data.type === 'check_in') {
+                        const statusInfo = data.status === 'late' ? ' (Đi trễ)' : ' (Đúng giờ)';
+                        document.getElementById('resultMessage').innerHTML = 
+                            `<i class="fas fa-check-circle me-2"></i>✅ ${actionType} tự động thành công! ${statusInfo}`;
+                        document.getElementById('resultMessage').className = 'alert alert-success text-center';
+                        
+                        currentAttendance = { 
+                            has_checked_in: true, 
+                            has_checked_out: false,
+                            check_in_time: data.employee.check_in,
+                            status: data.status
+                        };
+                        updateEmployeeInfo(currentEmployee, currentAttendance, data.confidence);
+                        
+                        // Phát âm thanh và giọng nói thông báo
+                        playNotificationSound('checkin', data.status);
+                        
+                    } else if (data.type === 'check_out') {
+                        document.getElementById('resultMessage').innerHTML = 
+                            `<i class="fas fa-check-circle me-2"></i>✅ ${actionType} tự động thành công! ${data.message}`;
+                        document.getElementById('resultMessage').className = 'alert alert-success text-center';
+                        
+                        currentAttendance = { 
+                            has_checked_in: true, 
+                            has_checked_out: true,
+                            check_in_time: data.employee.check_in,
+                            check_out_time: data.employee.check_out 
+                        };
+                        updateEmployeeInfo(currentEmployee, currentAttendance, data.confidence);
+                        
+                        // Phát âm thanh và giọng nói thông báo
+                        playNotificationSound('checkout');
+                    }
+                    
+                    loadTodayAttendance();
+                    loadStats();
+                    
+                    // Reset để chuẩn bị cho lần nhận diện tiếp theo
+                    setTimeout(() => {
+                        resetAutoCheckTimer();
+                    }, 3000);
+                    
+                } else {
+                    document.getElementById('resultMessage').innerHTML = 
+                        `<i class="fas fa-exclamation-circle me-2"></i>${data.message || data.error}`;
+                    document.getElementById('resultMessage').className = 'alert alert-warning text-center';
+                    resetAutoCheckTimer();
+                }
+            } catch (error) {
+                console.error('Auto check error:', error);
+                document.getElementById('resultMessage').innerHTML = 
+                    '<i class="fas fa-times-circle me-2"></i>Lỗi kết nối server';
+                document.getElementById('resultMessage').className = 'alert alert-danger text-center';
+                resetAutoCheckTimer();
+            }
+        }
+        
+        // Reset timer tự động check
+        function resetAutoCheckTimer() {
+            if (autoCheckTimer) {
+                clearTimeout(autoCheckTimer);
+                autoCheckTimer = null;
+            }
+            recognizedEmployeeId = null;
+            recognitionStartTime = null;
+        }
+        
+        // Phát âm thanh thông báo
+        function playNotificationSound(type, status = null) {
+            console.log('Playing notification:', type, status);
+            
+            // Unlock audio nếu chưa
+            unlockAudio();
+            
+            // Phát beep trước
+            playBeep(type).then(() => {
+                // Sau đó phát giọng nói
+                setTimeout(() => {
+                    speakNotification(type, status);
+                }, 300);
+            }).catch(() => {
+                // Nếu beep lỗi, vẫn phát giọng nói
+                speakNotification(type, status);
+            });
+        }
+        
+        // Phát tiếng beep
+        function playBeep(type) {
+            return new Promise((resolve, reject) => {
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    
+                    // Resume nếu bị suspended
+                    if (audioContext.state === 'suspended') {
+                        audioContext.resume();
+                    }
+                    
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    if (type === 'checkin') {
+                        oscillator.frequency.setValueAtTime(523, audioContext.currentTime);
+                        oscillator.frequency.setValueAtTime(659, audioContext.currentTime + 0.15);
+                        oscillator.frequency.setValueAtTime(784, audioContext.currentTime + 0.3);
+                    } else {
+                        oscillator.frequency.setValueAtTime(784, audioContext.currentTime);
+                        oscillator.frequency.setValueAtTime(659, audioContext.currentTime + 0.15);
+                        oscillator.frequency.setValueAtTime(523, audioContext.currentTime + 0.3);
+                    }
+                    
+                    gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.5);
+                    
+                    oscillator.onended = () => resolve();
+                    
+                } catch (e) {
+                    console.log('Beep error:', e);
+                    reject(e);
+                }
+            });
+        }
+        
+        // Thông báo bằng giọng nói
+        function speakNotification(type, status) {
+            console.log('Speaking notification:', type, status);
+            // Chỉ phát beep, không cần giọng nói vì mobile không hỗ trợ tốt
+        }
+
+        // Cập nhật thông tin nhân viên
+        function updateEmployeeInfo(employee, attendance, confidence) {
+            const employeeCard = document.getElementById('employeeInfo');
+            employeeCard.classList.add('active');
+            
+            document.getElementById('employeeName').textContent = employee.name;
+            document.getElementById('employeeId').innerHTML = `Mã NV: ${employee.id}<br><small>${employee.department || ''}</small>`;
+            
+            let statusText = 'CHƯA CHECK-IN';
+            let statusClass = 'bg-warning';
+            let overlayStatusClass = 'checkin';
+            
+            if (attendance) {
+                if (attendance.has_checked_in && !attendance.has_checked_out) {
+                    statusText = attendance.status === 'late' ? 'ĐÃ CHECK-IN (TRỄ)' : 'ĐÃ CHECK-IN';
+                    statusClass = attendance.status === 'late' ? 'bg-warning' : 'bg-success';
+                    overlayStatusClass = 'checkout';
+                    document.getElementById('resultMessage').textContent = 
+                        `Đã check-in lúc ${attendance.check_in_time}`;
+                    document.getElementById('resultMessage').className = 'alert alert-success text-center';
+                } else if (attendance.has_checked_out) {
+                    statusText = 'ĐÃ CHECK-OUT';
+                    statusClass = 'bg-info';
+                    overlayStatusClass = 'done';
+                    document.getElementById('resultMessage').textContent = 
+                        `Đã hoàn thành ngày làm việc`;
+                    document.getElementById('resultMessage').className = 'alert alert-info text-center';
+                }
+            } else {
+                const confidenceText = confidence ? ` (Độ chính xác: ${confidence}%)` : '';
+                document.getElementById('resultMessage').textContent = 
+                    'Nhận diện thành công!' + confidenceText + ' Vui lòng check-in';
+                document.getElementById('resultMessage').className = 'alert alert-warning text-center';
+            }
+            
+            const statusBadge = document.getElementById('attendanceStatus');
+            statusBadge.textContent = statusText;
+            statusBadge.className = `badge ${statusClass} status-badge`;
+            
+            // Cập nhật overlay cho mobile
+            updateEmployeeOverlay(employee, attendance, confidence, statusText, overlayStatusClass);
+        }
+        
+        // Cập nhật overlay hiển thị trên camera (cho mobile)
+        function updateEmployeeOverlay(employee, attendance, confidence, statusText, statusClass) {
+            const overlay = document.getElementById('employeeOverlay');
+            
+            document.getElementById('overlayName').textContent = employee.name;
+            document.getElementById('overlayId').textContent = `Mã NV: ${employee.id}`;
+            document.getElementById('overlayStatus').textContent = statusText;
+            document.getElementById('overlayStatus').className = `status-text ${statusClass}`;
+            
+            if (confidence) {
+                document.getElementById('overlayConfidence').textContent = `Độ chính xác: ${confidence}%`;
+            } else {
+                document.getElementById('overlayConfidence').textContent = '';
+            }
+            
+            // Xác định class cho overlay
+            overlay.classList.remove('success', 'warning');
+            if (attendance && attendance.has_checked_out) {
+                overlay.classList.add('success');
+            } else if (attendance && attendance.has_checked_in) {
+                overlay.classList.add('warning');
+            } else {
+                overlay.classList.add('success');
+            }
+            
+            overlay.classList.add('show');
+        }
+        
+        // Ẩn overlay
+        function hideEmployeeOverlay() {
+            const overlay = document.getElementById('employeeOverlay');
+            overlay.classList.remove('show');
+            document.getElementById('overlayCountdown').textContent = '';
+        }
+
+        // Reset thông tin nhân viên
+        function resetEmployeeInfo() {
+            const employeeCard = document.getElementById('employeeInfo');
+            employeeCard.classList.remove('active');
+            
+            document.getElementById('employeeName').textContent = 'Vui lòng đứng trước camera';
+            document.getElementById('employeeId').textContent = 'Hệ thống đang nhận diện...';
+            document.getElementById('attendanceStatus').textContent = 'CHƯA NHẬN DIỆN';
+            document.getElementById('attendanceStatus').className = 'badge bg-secondary status-badge';
+            document.getElementById('resultMessage').textContent = 'Hãy đứng thẳng, nhìn vào camera';
+            document.getElementById('resultMessage').className = 'alert alert-info text-center';
+            
+            // Ẩn overlay
+            hideEmployeeOverlay();
+            
+            currentEmployee = null;
+            currentAttendance = null;
+            resetAutoCheckTimer();
+        }
+
+        // Check-in
+        async function checkIn() {
+            if (!currentEmployee) {
+                showMessage('Thông báo', 'Vui lòng đứng trước camera để nhận diện trước khi check-in');
+                return;
+            }
+            
+            try {
+                // Chụp ảnh
+                captureCtx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
+                const imageData = captureCanvas.toDataURL('image/jpeg', 0.8);
+                
+                document.getElementById('resultMessage').textContent = 'Đang xử lý check-in...';
+                document.getElementById('resultMessage').className = 'alert alert-warning text-center';
+                
+                // Gửi check-in
+                const response = await fetch('/attendance/check', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ image: imageData })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (data.type === 'check_in') {
+                        const statusInfo = data.status === 'late' ? ' (Đi trễ)' : ' (Đúng giờ)';
+                        showMessage('Thành công', `Chào mừng ${currentEmployee.name}! Check-in thành công lúc ${data.employee.check_in}${statusInfo}\nĐộ chính xác: ${data.confidence}%`);
+                        updateEmployeeInfo(currentEmployee, { 
+                            has_checked_in: true, 
+                            has_checked_out: false,
+                            check_in_time: data.employee.check_in,
+                            status: data.status
+                        }, data.confidence);
+                        // Phát âm thanh và giọng nói thông báo
+                        playNotificationSound('checkin', data.status);
+                    } else if (data.type === 'check_out') {
+                        showMessage('Thành công', `Cảm ơn ${currentEmployee.name}! Check-out thành công. ${data.message}\nĐộ chính xác: ${data.confidence}%`);
+                        updateEmployeeInfo(currentEmployee, { 
+                            has_checked_in: true, 
+                            has_checked_out: true,
+                            check_in_time: data.employee.check_in,
+                            check_out_time: data.employee.check_out 
+                        }, data.confidence);
+                        // Phát âm thanh và giọng nói thông báo
+                        playNotificationSound('checkout');
+                    }
+                    loadTodayAttendance();
+                    loadStats();
+                } else {
+                    showMessage('Thông báo', data.message || data.error || 'Có lỗi xảy ra');
+                }
+            } catch (error) {
+                console.error('Check-in error:', error);
+                showMessage('Lỗi', 'Không thể kết nối đến server');
+            }
+        }
+
+        // Check-out
+        async function checkOut() {
+            await checkIn(); // Dùng chung hàm với check-in
+        }
+
+        // Load thống kê
+        async function loadStats() {
+            try {
+                const response = await fetch('/attendance/status');
+                const data = await response.json();
+                
+                document.getElementById('totalToday').textContent = data.total;
+                document.getElementById('checkedInToday').textContent = data.checked_in;
+                document.getElementById('checkedOutToday').textContent = data.checked_out;
+            } catch (error) {
+                console.error('Load stats error:', error);
+            }
+        }
+
+        // Load danh sách điểm danh hôm nay
+        async function loadTodayAttendance() {
+            try {
+                const response = await fetch('/attendance/today');
+                const data = await response.json();
+                
+                const tbody = document.querySelector('#todayAttendanceTable tbody');
+                tbody.innerHTML = '';
+                
+                data.forEach(item => {
+                    const row = document.createElement('tr');
+                    
+                    let statusBadge = '<span class="badge bg-secondary">Chưa check-in</span>';
+                    if (item.check_in && !item.check_out) {
+                        statusBadge = '<span class="badge bg-success">Đang làm việc</span>';
+                    } else if (item.check_out) {
+                        statusBadge = '<span class="badge bg-info">Đã check-out</span>';
+                    }
+                    
+                    row.innerHTML = `
+                        <td>${item.employee_id}</td>
+                        <td>${item.full_name}</td>
+                        <td>${item.check_in || '--:--:--'}</td>
+                        <td>${item.check_out || '--:--:--'}</td>
+                        <td>${statusBadge}</td>
+                    `;
+                    
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Load attendance error:', error);
+            }
+        }
+
+        // Hiển thị message modal
+        function showMessage(title, message) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalBody').textContent = message;
+            const modal = new bootstrap.Modal(document.getElementById('messageModal'));
+            modal.show();
+        }
+
+        // Cập nhật đồng hồ
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('vi-VN');
+            const dateString = now.toLocaleDateString('vi-VN', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
+            document.getElementById('currentTime').textContent = timeString;
+            
+            // Cập nhật mobile clock
+            const mobileClock = document.getElementById('mobileClock');
+            if (mobileClock) {
+                mobileClock.textContent = timeString;
+            }
+            
+            document.title = `Điểm danh FaceID - ${timeString}`;
+        }
+
+        // Xử lý toggle tự động nhận diện
+        const autoRecognitionCheckbox = document.getElementById('autoRecognition');
+        if (autoRecognitionCheckbox) {
+            autoRecognitionCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    startAutoRecognition();
+                } else {
+                    stopAutoRecognition();
+                    resetEmployeeInfo();
+                    resetAutoCheckTimer();
+                }
+            });
+        }
+
+        // Khởi động khi trang load
+        document.addEventListener('DOMContentLoaded', function() {
+            startCamera();
+            updateClock();
+            setInterval(updateClock, 1000);
+            loadStats();
+            loadTodayAttendance();
+            
+            // Tự động load lại danh sách mỗi phút
+            setInterval(loadTodayAttendance, 60000);
+            setInterval(loadStats, 30000);
+            
+            // Retry play video nếu bị block
+            let retryCount = 0;
+            const retryPlay = setInterval(() => {
+                if (video.paused && videoStream && retryCount < 10) {
+                    video.play().then(() => {
+                        clearInterval(retryPlay);
+                        if (!autoRecognitionInterval) {
+                            startAutoRecognition();
+                        }
+                    }).catch(() => {});
+                    retryCount++;
+                } else if (!video.paused || retryCount >= 10) {
+                    clearInterval(retryPlay);
+                }
+            }, 500);
+            
+            // Bắt mọi sự kiện touch/click để đảm bảo camera chạy
+            const tryPlay = () => {
+                if (videoStream && video.paused) {
+                    video.play().then(() => {
+                        drawFrame();
+                        if (!autoRecognitionInterval) {
+                            startAutoRecognition();
+                        }
+                    }).catch(() => {});
+                }
+            };
+            
+            document.addEventListener('touchstart', tryPlay, { once: true, passive: true });
+            document.addEventListener('click', tryPlay, { once: true });
+        });
+
+        // Dọn dẹp khi trang đóng
+        window.addEventListener('beforeunload', function() {
+            if (drawFrameId) {
+                cancelAnimationFrame(drawFrameId);
+            }
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+            }
+            stopAutoRecognition();
+            resetAutoCheckTimer();
+        });
+    </script>
+</body>
+</html>

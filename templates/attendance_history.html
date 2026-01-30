@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Lịch sử điểm danh - FaceID System{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/employee.css') }}">
+{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-history me-2"></i>Lịch sử điểm danh</h2>
+
+<div class="card">
+    <div class="card-header">
+        <h5>Tất cả lịch sử điểm danh của bạn</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Ngày</th>
+                        <th>Check-in</th>
+                        <th>Check-out</th>
+                        <th>Thời gian làm</th>
+                        <th>Trạng thái</th>
+                        <th>Ghi chú</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in history %}
+                    <tr>
+                        <td>{{ record.date.strftime('%d/%m/%Y') }}</td>
+                        <td>
+                            {% if record.check_in %}
+                            {{ record.check_in.strftime('%H:%M:%S') }}
+                            {% else %}
+                            <span class="text-danger">--:--:--</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if record.check_out %}
+                            {{ record.check_out.strftime('%H:%M:%S') }}
+                            {% else %}
+                            <span class="text-warning">--:--:--</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if record.check_in and record.check_out %}
+                            {% set duration = (record.check_out - record.check_in).seconds %}
+                            {{ (duration // 3600) }}h {{ ((duration % 3600) // 60) }}m
+                            {% else %}
+                            --
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if record.status == 'present' %}
+                            <span class="badge bg-success">Có mặt</span>
+                            {% elif record.status == 'late' %}
+                            <span class="badge bg-warning">Đi muộn</span>
+                            {% else %}
+                            <span class="badge bg-danger">Vắng</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if not record.check_in %}
+                            <span class="text-danger">Không điểm danh</span>
+                            {% elif not record.check_out %}
+                            <span class="text-warning">Chưa check-out</span>
+                            {% else %}
+                            <span class="text-success">Hoàn thành</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center">Chưa có lịch sử điểm danh</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

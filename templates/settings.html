@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}Cài đặt hệ thống - FaceID System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-cog me-2"></i>Cài đặt hệ thống</h2>
+</div>
+
+<div class="row">
+    <!-- Cài đặt giờ làm việc -->
+    <div class="col-lg-6">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Cài đặt giờ làm việc</h5>
+            </div>
+            <div class="card-body">
+                <form id="workTimeForm">
+                    <div class="mb-4">
+                        <label for="work_start_time" class="form-label fw-bold">
+                            <i class="fas fa-play-circle text-success me-2"></i>Giờ vào làm
+                        </label>
+                        <input type="time" class="form-control form-control-lg" id="work_start_time" 
+                               name="work_start_time" value="{{ work_start_time }}" required>
+                        <small class="text-muted">Giờ bắt đầu làm việc chính thức</small>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="work_late_time" class="form-label fw-bold">
+                            <i class="fas fa-exclamation-triangle text-warning me-2"></i>Giờ tính đi muộn
+                        </label>
+                        <input type="time" class="form-control form-control-lg" id="work_late_time" 
+                               name="work_late_time" value="{{ work_late_time }}" required>
+                        <small class="text-muted">Check-in sau giờ này sẽ được tính là đi muộn</small>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="work_end_time" class="form-label fw-bold">
+                            <i class="fas fa-stop-circle text-danger me-2"></i>Giờ tan làm
+                        </label>
+                        <input type="time" class="form-control form-control-lg" id="work_end_time" 
+                               name="work_end_time" value="{{ work_end_time }}" required>
+                        <small class="text-muted">Giờ kết thúc làm việc chính thức</small>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg" id="btnSaveTime">
+                            <i class="fas fa-save me-2"></i>Lưu cài đặt
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Thông tin hiện tại -->
+    <div class="col-lg-6">
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Thông tin hiện tại</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <div class="stat-card green">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-sign-in-alt fa-3x me-3"></i>
+                                <div>
+                                    <h4 class="mb-0" id="displayStartTime">{{ work_start_time }}</h4>
+                                    <p class="mb-0">Giờ vào làm</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 mb-3">
+                        <div class="stat-card orange">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-clock fa-3x me-3"></i>
+                                <div>
+                                    <h4 class="mb-0" id="displayLateTime">{{ work_late_time }}</h4>
+                                    <p class="mb-0">Giờ tính đi muộn</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 mb-3">
+                        <div class="stat-card red">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-sign-out-alt fa-3x me-3"></i>
+                                <div>
+                                    <h4 class="mb-0" id="displayEndTime">{{ work_end_time }}</h4>
+                                    <p class="mb-0">Giờ tan làm</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    <strong>Lưu ý:</strong> Thay đổi cài đặt sẽ có hiệu lực ngay lập tức cho tất cả các lần điểm danh tiếp theo.
+                </div>
+            </div>
+        </div>
+        
+        <!-- Hướng dẫn -->
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="fas fa-question-circle me-2"></i>Hướng dẫn</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        <strong>Giờ vào làm:</strong> Là thời gian bắt đầu ngày làm việc
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        <strong>Giờ đi muộn:</strong> Nếu nhân viên check-in sau giờ này sẽ bị đánh dấu "Đi muộn"
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        <strong>Giờ tan làm:</strong> Là thời gian kết thúc ngày làm việc
+                    </li>
+                    <li>
+                        <i class="fas fa-info-circle text-info me-2"></i>
+                        Ví dụ: Vào làm 8:30, muộn sau 9:00, tan làm 17:30
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('workTimeForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const btn = document.getElementById('btnSaveTime');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang lưu...';
+    btn.disabled = true;
+    
+    try {
+        const response = await fetch('/admin/settings/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                work_start_time: document.getElementById('work_start_time').value,
+                work_late_time: document.getElementById('work_late_time').value,
+                work_end_time: document.getElementById('work_end_time').value
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Cập nhật hiển thị
+            document.getElementById('displayStartTime').textContent = data.settings.work_start_time;
+            document.getElementById('displayLateTime').textContent = data.settings.work_late_time;
+            document.getElementById('displayEndTime').textContent = data.settings.work_end_time;
+            
+            // Thông báo thành công
+            showAlert('success', data.message);
+        } else {
+            showAlert('danger', data.error || 'Có lỗi xảy ra');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showAlert('danger', 'Không thể kết nối đến server');
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+});
+
+function showAlert(type, message) {
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    // Thêm alert vào đầu trang
+    const container = document.querySelector('.content') || document.querySelector('main');
+    container.insertAdjacentHTML('afterbegin', alertHtml);
+    
+    // Tự động ẩn sau 5 giây
+    setTimeout(() => {
+        const alert = container.querySelector('.alert');
+        if (alert) {
+            alert.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

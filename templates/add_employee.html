@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Thêm nhân viên - FaceID System{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-user-plus me-2"></i>Thêm nhân viên mới</h2>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Thông tin nhân viên</h5>
+            </div>
+            <div class="card-body">
+                <form id="addEmployeeForm">
+                    <div class="mb-3">
+                        <label class="form-label">Mã nhân viên *</label>
+                        <input type="text" class="form-control" id="employee_id" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Họ và tên *</label>
+                        <input type="text" class="form-control" id="full_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phòng ban</label>
+                        <input type="text" class="form-control" id="department">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Chức vụ</label>
+                        <input type="text" class="form-control" id="position">
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Lưu thông tin
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Đăng ký khuôn mặt</h5>
+            </div>
+            <div class="card-body text-center">
+                <div id="camera-container">
+                    <video id="video" width="100%" height="300" autoplay></video>
+                    <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-success" onclick="captureFace()">
+                        <i class="fas fa-camera me-2"></i>Chụp ảnh khuôn mặt
+                    </button>
+                    <button class="btn btn-info" onclick="retakePhoto()">
+                        <i class="fas fa-redo me-2"></i>Chụp lại
+                    </button>
+                </div>
+                <div id="preview" class="mt-3"></div>
+                <div id="message" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="successModal" class="modal fade">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Thành công!</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle fa-2x mb-2"></i>
+                    <h5>Thêm nhân viên thành công!</h5>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <a href="{{ url_for('manage_employees') }}" class="btn btn-primary">Xem danh sách</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let capturedImage = null;
+
+// Khởi động camera
+const video = document.getElementById('video');
+if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+            video.srcObject = stream;
+        })
+        .catch(error => {
+            console.error("Camera error: ", error);
+            document.getElementById('message').innerHTML = 
+                '<div class="alert alert-danger">Không thể truy cập camera!</div>';
+        });
+}
+
+function captureFace() {
+    const canvas = document.getElementById('canvas');
+    const context = canvas.getContext('2d');
+    
+    // Vẽ ảnh từ video vào canvas
+    context.drawImage(video, 0, 0, 640, 480);
+    
+    // Chuyển thành base64
+    capturedImage = canvas.toDataURL('image/jpeg');
+    
+    // Hiển thị preview
+    document.getElementById('preview').innerHTML = `
+        <div class="card">
+            <div class="card-body">
+                <h6>Ảnh đã chụp:</h6>
+                <img src="${capturedImage}" width="150" class="img-thumbnail">
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('message').innerHTML = 
+        '<div class="alert alert-success">Đã chụp ảnh thành công!</div>';
+}
+
+function retakePhoto() {
+    capturedImage = null;
+    document.getElementById('preview').innerHTML = '';
+    document.getElementById('message').innerHTML = '';
+}
+
+// Xử lý form submit
+document.getElementById('addEmployeeForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    if(!capturedImage) {
+        alert('Vui lòng chụp ảnh khuôn mặt trước!');
+        return;
+    }
+    
+    const employeeData = {
+        employee_id: document.getElementById('employee_id').value,
+        full_name: document.getElementById('full_name').value,
+        department: document.getElementById('department').value,
+        position: document.getElementById('position').value,
+        face_image: capturedImage
+    };
+    
+    // Hiển thị loading
+    document.getElementById('message').innerHTML = 
+        '<div class="alert alert-info">Đang xử lý...</div>';
+    
+    // Gửi dữ liệu lên server
+    fetch('/admin/employee/add', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(employeeData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.success) {
+            const modal = new bootstrap.Modal(document.getElementById('successModal'));
+            modal.show();
+        } else {
+            document.getElementById('message').innerHTML = 
+                `<div class="alert alert-danger">Lỗi: ${data.error}</div>`;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('message').innerHTML = 
+            '<div class="alert alert-danger">Lỗi kết nối server!</div>';
+    });
+});
+</script>
+{% endblock %}

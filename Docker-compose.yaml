@@ -1,0 +1,32 @@
+version: 3.9
+services:
+  routes:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+    environment:
+      - FLASK_ENV=development
+    command: flask run --host=0.0.0.0 
+    depends_on:
+      - database
+      - Search_OpenAI
+    env_file:
+      - .env
+
+  Search_OpenAI:
+    ports:
+      - "5000:5000"
+    build: ./Search_OpenAI
+    volumes:
+      - ./Search_OpenAI:/app
+      - ./Search_OpenAI/data:/app/data
+    environment:
+      - FLASK_ENV=development
+   
+      
+
+ 
+
+    

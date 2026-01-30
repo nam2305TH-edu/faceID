@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}ChatAI - Trợ lý thông minh{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+    <div class="chat-header">
+        <div class="d-flex align-items-center">
+            <div class="chat-avatar">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="ms-3">
+                <h4 class="mb-0">ChatAI Assistant</h4>
+                <small class="text-muted">Trợ lý tìm kiếm thông minh</small>
+            </div>
+        </div>
+        <button class="btn btn-outline-danger btn-sm" onclick="clearChat()">
+            <i class="fas fa-trash me-1"></i>Xóa cuộc trò chuyện
+        </button>
+    </div>
+    
+    <div class="chat-messages" id="chatMessages">
+        <!-- Welcome message -->
+        <div class="message bot-message">
+            <div class="message-avatar">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="message-content">
+                <p>Xin chào <strong>{{ current_user.full_name }}</strong>! 👋</p>
+                <p>Tôi là ChatAI, trợ lý thông minh có thể giúp bạn:</p>
+                <ul>
+                    <li>🔍 Tìm kiếm thông tin trên internet</li>
+                    <li>📰 Cập nhật tin tức mới nhất</li>
+                    <li>💡 Trả lời các câu hỏi</li>
+                    <li>📊 Phân tích và tổng hợp thông tin</li>
+                </ul>
+                <p>Hãy đặt câu hỏi để bắt đầu!</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="chat-input-container">
+        <form id="chatForm" onsubmit="sendMessage(event)">
+            <div class="input-group">
+                <input type="text" class="form-control" id="chatInput" 
+                       placeholder="Nhập câu hỏi của bạn..." autocomplete="off">
+                <button type="submit" class="btn btn-primary" id="sendBtn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </form>
+        <div class="chat-suggestions">
+            <span class="suggestion-label">Gợi ý:</span>
+            <button class="suggestion-btn" onclick="askSuggestion('Thời tiết hôm nay thế nào?')">
+                🌤️ Thời tiết
+            </button>
+            <button class="suggestion-btn" onclick="askSuggestion('Tin tức mới nhất về công nghệ')">
+                💻 Tin công nghệ
+            </button>
+            <button class="suggestion-btn" onclick="askSuggestion('Giá vàng hôm nay')">
+                💰 Giá vàng
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+let sessionId = null;
+let isProcessing = false;
+
+function sendMessage(e) {
+    e.preventDefault();
+    
+    const input = document.getElementById('chatInput');
+    const query = input.value.trim();
+    
+    if (!query || isProcessing) return;
+    
+    // Hiển thị tin nhắn user
+    addMessage(query, 'user');
+    input.value = '';
+    
+    // Hiển thị typing indicator
+    showTyping();
+    
+    isProcessing = true;
+    document.getElementById('sendBtn').disabled = true;
+    
+    // Gửi request
+    fetch('/chat/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            query: query,
+            session_id: sessionId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideTyping();
+        
+        if (data.success) {
+            sessionId = data.session_id;
+            addMessage(data.answer, 'bot');
+        } else {
+            addMessage('❌ ' + (data.error || 'Có lỗi xảy ra'), 'bot', true);
+        }
+    })
+    .catch(error => {
+        hideTyping();
+        addMessage('❌ Lỗi kết nối server', 'bot', true);
+    })
+    .finally(() => {
+        isProcessing = false;
+        document.getElementById('sendBtn').disabled = false;
+        input.focus();
+    });
+}
+
+function addMessage(content, type, isError = false) {
+    const messagesContainer = document.getElementById('chatMessages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${type}-message ${isError ? 'error-message' : ''}`;
+    
+    const avatar = type === 'bot' 
+        ? '<div class="message-avatar"><i class="fas fa-robot"></i></div>'
+        : '<div class="message-avatar user"><i class="fas fa-user"></i></div>';
+    
+    // Format content với markdown cơ bản
+    let formattedContent = content
+        .replace(/\n/g, '<br>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`(.*?)`/g, '<code>$1</code>');
+    
+    messageDiv.innerHTML = `
+        ${avatar}
+        <div class="message-content">
+            <p>${formattedContent}</p>
+            <small class="message-time">${new Date().toLocaleTimeString('vi-VN')}</small>
+        </div>
+    `;
+    
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function showTyping() {
+    const messagesContainer = document.getElementById('chatMessages');
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'message bot-message typing-indicator';
+    typingDiv.id = 'typingIndicator';
+    typingDiv.innerHTML = `
+        <div class="message-avatar"><i class="fas fa-robot"></i></div>
+        <div class="message-content">
+            <div class="typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    `;
+    messagesContainer.appendChild(typingDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function hideTyping() {
+    const typing = document.getElementById('typingIndicator');
+    if (typing) typing.remove();
+}
+
+function askSuggestion(text) {
+    document.getElementById('chatInput').value = text;
+    document.getElementById('chatForm').dispatchEvent(new Event('submit'));
+}
+
+function clearChat() {
+    if (!confirm('Bạn có chắc muốn xóa cuộc trò chuyện?')) return;
+    
+    sessionId = null;
+    const messagesContainer = document.getElementById('chatMessages');
+    messagesContainer.innerHTML = `
+        <div class="message bot-message">
+            <div class="message-avatar"><i class="fas fa-robot"></i></div>
+            <div class="message-content">
+                <p>Cuộc trò chuyện đã được xóa. Hãy đặt câu hỏi mới!</p>
+            </div>
+        </div>
+    `;
+}
+
+// Focus input khi load trang
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('chatInput').focus();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Quản lý nhân viên - FaceID System{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-users-cog me-2"></i>Quản lý nhân viên</h2>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5>Danh sách nhân viên</h5>
+        <a href="{{ url_for('add_employee') }}" class="btn btn-success">
+            <i class="fas fa-user-plus me-2"></i>Thêm nhân viên
+        </a>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Mã NV</th>
+                        <th>Họ tên</th>
+                        <th>Phòng ban</th>
+                        <th>Chức vụ</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày tạo</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for employee in employees %}
+                    <tr>
+                        <td>{{ employee.employee_id }}</td>
+                        <td>{{ employee.full_name }}</td>
+                        <td>{{ employee.department or '--' }}</td>
+                        <td>{{ employee.position or '--' }}</td>
+                        <td>
+                            {% if employee.is_active %}
+                            <span class="badge bg-success">Đang làm</span>
+                            {% else %}
+                            <span class="badge bg-danger">Nghỉ việc</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ employee.created_at.strftime('%d/%m/%Y') }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-info" onclick="viewEmployee({{ employee.id }})">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-warning" onclick="editEmployee({{ employee.id }})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteEmployee({{ employee.id }})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function viewEmployee(id) {
+    alert('Xem chi tiết nhân viên ID: ' + id);
+}
+
+function editEmployee(id) {
+    alert('Sửa nhân viên ID: ' + id);
+}
+
+function deleteEmployee(id) {
+    if(confirm('Bạn có chắc chắn muốn xóa nhân viên này?')) {
+        fetch('/admin/employee/delete/' + id, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                alert('Xóa thành công!');
+                location.reload();
+            } else {
+                alert('Lỗi: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Lỗi kết nối!');
+        });
+    }
+}
+</script>
+{% endblock %}

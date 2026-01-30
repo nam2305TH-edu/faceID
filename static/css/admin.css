@@ -1,0 +1,225 @@
+
+/* ==================== Sidebar ==================== */
+.sidebar {
+    min-height: 100vh;
+    background: linear-gradient(180deg, #343a40 0%, #212529 100%);
+    color: white;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 16.666667%;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar .position-sticky {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+.sidebar h4 {
+    color: #fff;
+    padding: 20px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    flex-shrink: 0;
+}
+
+.sidebar .nav-item {
+    margin: 5px 10px;
+}
+
+.sidebar a {
+    color: rgba(255,255,255,0.8);
+    text-decoration: none;
+    padding: 12px 15px;
+    display: block;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.sidebar a:hover {
+    background-color: rgba(255,255,255,0.1);
+    color: #fff;
+    transform: translateX(5px);
+}
+
+.sidebar a.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.sidebar a i {
+    margin-right: 10px;
+    width: 20px;
+    text-align: center;
+}
+
+.sidebar-heading {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Sidebar User Info - Fixed at bottom */
+.sidebar-user-info {
+    margin-top: auto;
+    padding: 15px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    background: rgba(0,0,0,0.2);
+    flex-shrink: 0;
+}
+
+.sidebar-user-info .d-flex {
+    align-items: center;
+}
+
+.sidebar-user-info small {
+    display: block;
+    line-height: 1.4;
+}
+
+.sidebar-user-info .btn {
+    margin-top: 10px;
+}
+
+/* ==================== Main Content ==================== */
+.content {
+    padding: 30px;
+    margin-left: 16.666667%;
+    min-height: 100vh;
+}
+
+/* ==================== Stat Cards ==================== */
+.stat-card {
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 20px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100%;
+    height: 100%;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+    transition: all 0.5s ease;
+}
+
+.stat-card:hover::before {
+    transform: scale(2);
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+}
+
+.stat-card h3 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 10px 0;
+}
+
+.stat-card h4 {
+    font-size: 1.5rem;
+    opacity: 0.9;
+}
+
+.stat-card p {
+    margin: 0;
+    opacity: 0.8;
+    font-size: 0.9rem;
+}
+
+.stat-card.blue {
+    background: linear-gradient(135deg, #2196F3 0%, #21CBF3 100%);
+}
+
+.stat-card.green {
+    background: linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%);
+}
+
+.stat-card.orange {
+    background: linear-gradient(135deg, #FF9800 0%, #FF5722 100%);
+}
+
+.stat-card.purple {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-card.red {
+    background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+}
+
+.stat-card.teal {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+}
+
+/* ==================== User Card ==================== */
+.user-info-card {
+    background: linear-gradient(135deg, #343a40 0%, #212529 100%);
+    border-radius: 10px;
+    padding: 15px;
+    color: white;
+}
+
+.user-info-card .user-avatar {
+    font-size: 2.5rem;
+    margin-right: 15px;
+}
+
+/* ==================== Quick Action Buttons ==================== */
+.quick-actions .btn {
+    padding: 15px 20px;
+    font-size: 1rem;
+    margin-bottom: 10px;
+    text-align: left;
+}
+
+.quick-actions .btn i {
+    margin-right: 10px;
+    width: 20px;
+}
+
+/* ==================== Recent Activity ==================== */
+.recent-activity .activity-item {
+    padding: 15px;
+    border-left: 3px solid #667eea;
+    margin-bottom: 10px;
+    background: #f8f9fa;
+    border-radius: 0 8px 8px 0;
+    transition: all 0.3s ease;
+}
+
+.recent-activity .activity-item:hover {
+    background: #e9ecef;
+    transform: translateX(5px);
+}
+
+/* ==================== Responsive ==================== */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        position: relative;
+        min-height: auto;
+    }
+    
+    .content {
+        margin-left: 0;
+        padding: 15px;
+    }
+    
+    .stat-card h3 {
+        font-size: 1.8rem;
+    }
+}

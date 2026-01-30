@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Xem điểm danh - FaceID System{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-clipboard-list me-2"></i>Xem điểm danh</h2>
+
+<div class="card">
+    <div class="card-header">
+        <h5>Lọc theo ngày</h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label>Chọn ngày</label>
+                <input type="date" name="date" value="{{ selected_date }}" class="form-control">
+            </div>
+            <div class="col-md-2 align-self-end">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter me-2"></i>Lọc
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h5>Bảng điểm danh ngày {{ selected_date }}</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Mã NV</th>
+                        <th>Họ tên</th>
+                        <th>Check-in</th>
+                        <th>Check-out</th>
+                        <th>Thời gian làm</th>
+                        <th>Trạng thái</th>
+                        <th>Hình ảnh</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for attendance in attendances %}
+                    <tr>
+                        <td>{{ attendance.employee_id }}</td>
+                        <td>{{ attendance.full_name }}</td>
+                        <td>
+                            {% if attendance.check_in %}
+                            {{ attendance.check_in.strftime('%H:%M:%S') }}
+                            {% else %}
+                            <span class="text-danger">Vắng</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if attendance.check_out %}
+                            {{ attendance.check_out.strftime('%H:%M:%S') }}
+                            {% else %}
+                            <span class="text-warning">Chưa check-out</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if attendance.time_lam %}
+                            {{ (attendance.time_lam // 60) }} giờ {{ (attendance.time_lam % 60) }} phút
+                            {% else %}
+                            --+--
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if attendance.status == 'present' %}
+                            <span class="badge bg-success">Có mặt</span>
+                            {% elif attendance.status == 'late' %}
+                            <span class="badge bg-warning">Đi muộn</span>
+                            {% else %}
+                            <span class="badge bg-danger">Vắng</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if attendance.check_in_image %}
+                            <div>
+                               
+                              <button onclick="viewImage('{{ attendance.check_in_image | replace('\\', '/') }}')">
+
+                                    <i class="fas fa-image"></i>
+                                </button>
+                            </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center">Không có dữ liệu điểm danh</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Image Modal -->
+<div class="modal fade" id="imageModal">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Hình ảnh điểm danh</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" style="max-width: 100%;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+function viewImage(imagePath) {
+    imagePath = imagePath.trim().replace(/\\/g, '/');
+    document.getElementById('modalImage').src = '../' + imagePath;
+    new bootstrap.Modal(document.getElementById('imageModal')).show();
+}
+</script>
+
+
+</script>
+{% endblock %}

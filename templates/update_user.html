@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Cập nhật thông tin nhân viên{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Cập nhật thông tin nhân viên</h2>
+    <form method="POST">
+        <div class="mb-3">
+            <label for="full_name" class="form-label">Họ tên</label>
+            <input type="text" class="form-control" id="full_name" name="full_name" value="{{ user.full_name }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}">
+        </div>
+        <div class="mb-3">
+            <label for="department" class="form-label">Phòng ban</label>
+            <input type="text" class="form-control" id="department" name="department" value="{{ user.department }}">
+        </div>
+        <div class="mb-3">
+            <label for="position" class="form-label">Chức vụ</label>
+            <input type="text" class="form-control" id="position" name="position" value="{{ user.position }}">
+        </div>
+        <div class="mb-3">
+            <label for="salary" class="form-label">Lương theo giờ</label>
+            <input type="number" step="0.01" class="form-control" id="salary" name="salary" value="{{ user.salary }}">
+        </div>
+        <button type="submit" class="btn btn-primary">Cập nhật</button>
+        <a href="{{ url_for('admin.manage_users') }}" class="btn btn-secondary ms-2">Quay lại</a>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Employee Dashboard - FaceID System{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/employee.css') }}">
+{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-user me-2"></i>Chào mừng, {{ current_user.full_name }}!</h2>
+
+<!-- Điểm danh hôm nay -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5><i class="fas fa-calendar-day me-2"></i>Điểm danh hôm nay</h5>
+            </div>
+            <div class="card-body">
+                {% if today_attendance %}
+                <div class="alert alert-success">
+                    <h5><i class="fas fa-check-circle me-2"></i>Đã điểm danh</h5>
+                    <p><strong>Check-in:</strong> {{ today_attendance.check_in.strftime('%H:%M:%S') }}</p>
+                    {% if today_attendance.check_out %}
+                    <p><strong>Check-out:</strong> {{ today_attendance.check_out.strftime('%H:%M:%S') }}</p>
+                    {% else %}
+                   
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    <h5><i class="fas fa-exclamation-triangle me-2"></i>Chưa điểm danh hôm nay</h5>
+                    
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle me-2"></i>Thông tin của bạn</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Mã NV:</strong> {{ current_user.username }}</p>
+                <p><strong>Họ tên:</strong> {{ current_user.full_name }}</p>
+                <p><strong>Vai trò:</strong> Nhân viên</p>
+                <p><strong>Email:</strong> {{ current_user.email or 'Chưa cập nhật' }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Thống kê nhanh -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="stat-card blue">
+            <h4><i class="fas fa-check-in-alt"></i></h4>
+            <h3>{{ total_check_ins }}</h3>
+            <p>Tổng số lần check-in</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card green">
+            <h4><i class="fas fa-check-out-alt"></i></h4>
+            <h3>{{ total_check_outs }}</h3>
+            <p>Tổng số lần check-out</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card orange">
+            <h4><i class="fas fa-clock"></i></h4>
+            <h3>{{ total_working_hours }}</h3>
+            <p>Tổng giờ làm việc</p>
+        </div>
+    </div>
+<!-- Lịch sử 7 ngày -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-history me-2"></i>Lịch sử điểm danh (7 ngày gần nhất)</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Ngày</th>
+                                <th>Check-in</th>
+                                <th>Check-out</th>
+                                <th>Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in history %}
+                            <tr>
+                                <td>{{ record.date.strftime('%d/%m/%Y') }}</td>
+                                <td>
+                                    {% if record.check_in %}
+                                    {{ record.check_in.strftime('%H:%M:%S') }}
+                                    {% else %}
+                                    <span class="text-danger">Vắng</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if record.check_out %}
+                                    {{ record.check_out.strftime('%H:%M:%S') }}
+                                    {% else %}
+                                    <span class="text-warning">Chưa check-out</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if record.status == 'present' %}
+                                    <span class="badge bg-success">Có mặt</span>
+                                    {% elif record.status == 'late' %}
+                                    <span class="badge bg-warning">Đi muộn</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Vắng</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Camera Modal -->
+<div class="modal fade" id="cameraModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Điểm danh bằng FaceID</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div id="camera-container">
+                    <video id="video" width="640" height="480" autoplay></video>
+                    <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-primary" onclick="captureImage()">
+                        <i class="fas fa-camera me-2"></i>Chụp ảnh & Điểm danh
+                    </button>
+                </div>
+                <div id="result" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
